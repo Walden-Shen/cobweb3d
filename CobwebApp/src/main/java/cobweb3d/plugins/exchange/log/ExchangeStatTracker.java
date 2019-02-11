@@ -6,6 +6,8 @@ import cobweb3d.impl.stats.BaseStatsProvider;
 import cobweb3d.plugins.exchange.ExchangeParams;
 import cobweb3d.plugins.exchange.ExchangeState;
 
+import java.util.List;
+
 public class ExchangeStatTracker {
 
     public static float getTotalX(BaseStatsProvider statsProvider) {
@@ -104,5 +106,19 @@ public class ExchangeStatTracker {
             }
         }
         return totalY;
+    }
+
+    public static float getUtilityForIndividualAgent(BaseStatsProvider statsProvider, ExchangeParams exchangeParams, int index) {
+        List<BaseAgent> l = statsProvider.getAgents();
+        Agent a = (Agent)(l.get(index));
+        ExchangeState state = a.getState(ExchangeState.class);
+        if (state != null) {
+            if (state.util == null) state.util = exchangeParams.getAgentParams(a).calculateU(state);
+        } else {
+            state = new ExchangeState(exchangeParams.getAgentParams(a));
+            state.util = exchangeParams.getAgentParams(a).calculateU(state);
+            a.setState(ExchangeState.class, state);
+        }
+        return state.util;
     }
 }
