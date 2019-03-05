@@ -2,12 +2,18 @@ package cobweb3d.plugins.transform;
 
 import cobweb3d.core.SimulationTimeSpace;
 import cobweb3d.core.agent.BaseAgent;
+import cobweb3d.core.environment.Topology;
 import cobweb3d.impl.Simulation;
 import cobweb3d.impl.agent.Agent;
 import cobweb3d.plugins.exchange.ExchangeState;
 import cobweb3d.plugins.mutators.ConsumptionMutator;
 import cobweb3d.plugins.mutators.StatefulMutatorBase;
 import cobweb3d.plugins.mutators.UpdateMutator;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardOpenOption;
+import java.util.List;
 
 public class TransformationMutator extends StatefulMutatorBase<TransformationState, TransformationParams> implements UpdateMutator, ConsumptionMutator {
     TransformationParams params;
@@ -39,6 +45,29 @@ public class TransformationMutator extends StatefulMutatorBase<TransformationSta
     @Override
     public void onUpdate(BaseAgent agent) {
         if (params.of(agent).exchangeTransformationAgentParams.enabled && getX(agent) >= params.of(agent).exchangeTransformationAgentParams.transformationX.getValue()) {
+            if (params.of(agent).exchangeTransformationAgentParams.destType == 10) {
+                File file = new File("transformation_data.txt");
+                if (!file.exists()) {
+                    try {
+                        file.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                try (Writer writer = new FileWriter("transformation_data.txt", true)) {
+                    List<BaseAgent> agents = ((Simulation)this.simulation).getAgents();
+                    Topology topology = simulation.getTopology();
+                    float summation = 0;
+                    int cnt = 0;
+                    for (BaseAgent a: agents) {
+                        summation += topology.getDistance(a.position, agent.position);
+                        cnt += 1;
+                    }
+                    writer.write(Integer.toString(agent.getType()+1) + " " + Double.toString(summation/cnt) + System.lineSeparator());
+                } catch (IOException ex) {
+                    // Handle me
+                }
+            }
             setAgentState(agent, new TransformationState(getAgentState(agent), agent.getType(), (int) simulation.getTime()));
             agent.transformType(params.of(agent).exchangeTransformationAgentParams.destType - 1);
             if (agent instanceof Agent) {
